@@ -5,8 +5,7 @@ const tryCatchWrapper = fn => {
     try {
       await fn(req, res);
     } catch (error) {
-      x = {status: 'error', message: error.message};
-      res.json(x);
+      res.json({status: 'error', message: error.message});
     }
   }
 };
