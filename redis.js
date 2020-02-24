@@ -1,17 +1,3 @@
-const RedisServer = require('redis-server');
-
-const server = new RedisServer({
-  conf: '/etc/redis/redis.conf'
-});
-
-server.open((err) => {
-  if (err === null) {
-    console.log('Redis connected');
-  } else {
-    console.log('There was error creating server', err);
-  }
-});
-
 const getRedisClient = (() => {
   let client;
   return () => {
