@@ -57,7 +57,7 @@ app.get('/sign', tryCatchWrapper(async(req, res) => {
     const signature = await providerESN.send('eth_sign', [process.env.SIGNER_ADDRESS, headerRLP]);
 
     const signedHeaderRLP = ethers.utils.RLP.encode([
-      headerRLP,
+      headerArray,
       signature
     ]);
 
