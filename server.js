@@ -34,12 +34,12 @@ app.get('/blockNumber', tryCatchWrapper(async(req, res) => {
 app.get('/sign', tryCatchWrapper(async(req, res) => {
   const startBlockNumber = +req.query.startBlockNumber;
   if(isNaN(startBlockNumber)) {
-    throw 'Invalid startBlockNumber';
+    throw new Error('Invalid startBlockNumber');
   }
 
   const bunchDepth = +req.query.bunchDepth;
   if(isNaN(bunchDepth)) {
-    throw 'Invalid bunchDepth';
+    throw new Error('Invalid bunchDepth');
   }
 
   const output = await redisPromise(`${startBlockNumber}-${bunchDepth}`, async() => {

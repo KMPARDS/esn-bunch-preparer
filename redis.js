@@ -20,15 +20,19 @@ const redisPromise = (key, valueFn, expireSeconds = null) => {
       if(value) {
         resolve(value);
       } else {
-        let outputPromise = keyOutputPromises[key] || (keyOutputPromises[key] = valueFn());
-        const output = await outputPromise;
-        if(expireSeconds) {
-          getRedisClient().setex(key, expireSeconds, output);
-        } else {
-          getRedisClient().set(key, output);
+        try {
+          let outputPromise = keyOutputPromises[key] || (keyOutputPromises[key] = valueFn());
+          const output = await outputPromise;
+          if(expireSeconds) {
+            getRedisClient().setex(key, expireSeconds, output);
+          } else {
+            getRedisClient().set(key, output);
+          }
+          resolve(output);
+        } catch (error) {
+          reject(error);
         }
         keyOutputPromises[key] = null;
-        resolve(output);
       }
     });
   });
