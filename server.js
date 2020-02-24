@@ -1,11 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const { redisPromise } = require('./redis');
+
 const ethers = require('ethers');
-const { fetchBlocksAndReturnMegaRoot } = require('./functions');
+const { tryCatchWrapper, fetchBlocksAndReturnMegaRoot } = require('./functions');
 
 const esnNodeUrl = process.env.NODE_ENV === 'production' ? 'http://localhost:8540' : process.env.ESN_PUBLIC_NODE;
 const providerESN = new ethers.providers.JsonRpcProvider(esnNodeUrl);
-
 
 const app = express();
 
@@ -22,29 +23,26 @@ app.get('/ping', async(req, res) => {
   res.send('pong');
 });
 
-app.get('/blockNumber', async(req, res) => {
-  try {
-    const blockNumber = await providerESN.send('eth_blockNumber');
-    res.json({status: 'success', data: +blockNumber});
-  } catch (error) {
-    res.json({status: 'error', message: error.message});
+app.get('/blockNumber', tryCatchWrapper(async(req, res) => {
+  const output = await redisPromise('blockNumber', async() => {
+    return await providerESN.send('eth_blockNumber')
+  }, 5);
+
+  res.json({ status: 'success', data: output });
+}));
+
+app.get('/sign', tryCatchWrapper(async(req, res) => {
+  const startBlockNumber = +req.query.startBlockNumber;
+  if(isNaN(startBlockNumber)) {
+    throw 'Invalid startBlockNumber';
   }
-});
 
-app.get('/sign', async(req, res) => {
-  try {
-    console.log(req.query);
+  const bunchDepth = +req.query.bunchDepth;
+  if(isNaN(bunchDepth)) {
+    throw 'Invalid bunchDepth';
+  }
 
-    const startBlockNumber = +req.query.startBlockNumber;
-    if(isNaN(startBlockNumber)) {
-      throw 'Invalid startBlockNumber';
-    }
-
-    const bunchDepth = +req.query.bunchDepth;
-    if(isNaN(bunchDepth)) {
-      throw 'Invalid bunchDepth';
-    }
-
+  const output = await redisPromise(`${startBlockNumber}-${bunchDepth}`, async() => {
     const transactionsMegaRoot = await fetchBlocksAndReturnMegaRoot(startBlockNumber, bunchDepth, providerESN);
 
     const headerArray = [
@@ -63,11 +61,11 @@ app.get('/sign', async(req, res) => {
       signature
     ]);
 
-    res.json({status: 'success', data: signedHeaderRLP});
-  } catch (error) {
-    res.json({status: 'error', message: error.message});
-  }
-});
+    return signedHeaderRLP;
+  });
+
+  res.json({ status: 'success', data: output });
+}));
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on PORT ${port}`));

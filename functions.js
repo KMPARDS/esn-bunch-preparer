@@ -1,5 +1,15 @@
 const ethers = require('ethers');
 
+const tryCatchWrapper = fn => {
+  return async(req, res) => {
+    try {
+      await fn(req, res);
+    } catch (error) {
+      res.json({status: 'error', message: error.message});
+    }
+  }
+};
+
 async function fetchBlocksAndReturnMegaRoot(startBlockNumber, bunchDepth, providerESN) {
   if(startBlockNumber instanceof ethers.utils.BigNumber) startBlockNumber = startBlockNumber.toNumber();
   if(bunchDepth instanceof ethers.utils.BigNumber) bunchDepth = bunchDepth.toNumber();
@@ -49,4 +59,4 @@ async function fetchBlocksAndReturnMegaRoot(startBlockNumber, bunchDepth, provid
   return getMegaRoot(txRootArray);
 }
 
-module.exports = { fetchBlocksAndReturnMegaRoot };
+module.exports = { tryCatchWrapper, fetchBlocksAndReturnMegaRoot };
